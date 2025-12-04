@@ -1,0 +1,74 @@
+Descrição do Problema
+
+O João Caracol vai participar num jogo de realidade virtual, onde os concorrentes retiram ami-
+noácidos de uma cadeia de n aminoácidos a1 , . . . , an de uma proteína. Cada vez que um ami-
+noácido ai é retirado, uma certa quantidade de energia é libertada, que depende:
+• da energia potencial Pi do aminoácido ai ;
+• da fixação do aminoácido aos dois aminoácidos mais próximos, dada pela energia poten-
+cial destes Pi−1 e Pi+1 ;
+• e da afinidade Af(C(a),C(b)) entre a classe bioquímica Polar (P), Não-Polar (N), Ácido
+(A), ou Base (B), do aminoácido a com o aminoácido b.
+e é dada pela seguinte expressão:
+Elibertada = Pi−1 × Af(C(i − 1),C(i)) × Pi + Pi × Af(C(i),C(i + 1)) × Pi+1
+e onde a afinidade (≥ 0) entre duas classes é dada pela seguinte tabela (não simétrica!):
+
+As extremidades da cadeia, posição 0 e n + 1, são consideradas pontos de fixação com uma
+energia potencial de 1 e uma classe bioquímica especial Terminal (T), que é sempre neutra em
+qualquer interacção, i.e., Af(T, c) = Af(c, T ) = 1, qualquer que seja a classe c.
+Assim, o objectivo é encontrar a ordem pelo qual se devem retirar todos os a1 , . . . , an , tal
+que o somatório da energia total libertada seja máximo, e ajudar o João Caracol a ganhar o jogo.
+
+Input
+
+O ficheiro de entrada contém toda a informação sobre a sequência de aminoácidos. Assim, o
+ficheiro de entrada é definido da seguinte forma:
+• Uma linha contendo um inteiro n ≥ 1 correspondendo ao número de aminoácidos na
+sequência;
+• Uma linha com uma sequência de n inteiros, separados por espaço, correspondendo ao
+potencial (> 0) de estabilidade de cada aminoácido;
+• Uma linha com uma sequência de n caracteres (sem espaços), correspondendo à classe
+bioquímica de cada aminoácido (P, N, A, ou B).
+
+Output
+
+O programa deverá examinar a sequência de aminoácidos e determinar a ordem pela qual devem
+ser retirados que maximiza a energia total libertada.
+O output deve ser o seguinte:
+• A primeira linha deve conter o valor da energia total libertada;
+• A segunda linha deve conter a sequência de aminoácidos, separados por espaço, que
+permitiu esse valor de energia total libertada. Se existir mais do que uma sequência
+óptima, deve ser apresentada a que for lexicograficamente menor.
+
+Exemplo 1
+Input
+3
+10 5 12
+ABA
+Output
+359
+1 2 3
+2Exemplo 2
+Input
+9
+4 2 7 3 5 1 2 8 3
+ANBPAPBNA
+Output
+607
+2 1 4 6 5 7 8 9 3
+
+Sugestões de performance em C++:
+
+Input/Output: se fizerem a leitura do input e escrita do output via cin/cout devem colocar os seguintes comandos no início do ficheiro: 
+std::ios::sync_with_stdio(0);
+std::cin.tie(0);
+Alternativamente podem simplesmente usar os comandos de C: scanf e printf. 
+
+
+Parâmetros de compilação:
+
+C++: g++ -std=c++11 -O3 -Wall file.cpp -lm
+C: gcc -O3 -ansi -Wall file.c -lm
+Javac: javac File.java
+Java: java -Xss32m -Xmx256m -classpath . File
+Python: python3 file.py
+Rust: rustc -C opt-level=3 --edition=2021 file.rs

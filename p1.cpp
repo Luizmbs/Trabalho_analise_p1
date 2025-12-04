@@ -1,24 +1,19 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <map>
-#include <algorithm>
 #include <cstring>
+#include <algorithm>
 
 using namespace std;
 
-// Tabela de afinidade entre classes bioquímicas
 int affinity[256][256];
 
 void initAffinity() {
-    // Terminal (T) com todas as classes = 1
     for (int i = 0; i < 256; i++) {
         affinity['T'][i] = 1;
         affinity[i]['T'] = 1;
     }
     
-    // Tabela de afinidade da imagem
-    // Af[linha][coluna]
     affinity['P']['P'] = 1; affinity['P']['N'] = 3; affinity['P']['A'] = 1; affinity['P']['B'] = 3;
     affinity['N']['P'] = 5; affinity['N']['N'] = 1; affinity['N']['A'] = 0; affinity['N']['B'] = 1;
     affinity['A']['P'] = 0; affinity['A']['N'] = 1; affinity['A']['A'] = 0; affinity['A']['B'] = 4;
@@ -28,18 +23,19 @@ void initAffinity() {
 int n;
 vector<int> potential;
 string classes;
-map<pair<int, int>, pair<long long, vector<int>>> memo;
 
-// Calcula a energia liberada ao remover o aminoácido na posição k
-// left e right são os índices dos aminoácidos ainda presentes à esquerda e direita
+const int MAXN = 2005;
+long long dp[MAXN][MAXN];
+int choice[MAXN][MAXN];
+
 long long energy(int left, int k, int right) {
     int p_left = (left == 0) ? 1 : potential[left];
     int p_k = potential[k];
     int p_right = (right == n + 1) ? 1 : potential[right];
     
-    char c_left = (left == 0) ? 'T' : classes[left - 1];
-    char c_k = classes[k - 1];
-    char c_right = (right == n + 1) ? 'T' : classes[right - 1];
+    unsigned char c_left = (left == 0) ? 'T' : classes[left - 1];
+    unsigned char c_k = classes[k - 1];
+    unsigned char c_right = (right == n + 1) ? 'T' : classes[right - 1];
     
     long long e1 = (long long)p_left * affinity[c_left][c_k] * p_k;
     long long e2 = (long long)p_k * affinity[c_k][c_right] * p_right;
@@ -47,50 +43,78 @@ long long energy(int left, int k, int right) {
     return e1 + e2;
 }
 
-// Programação dinâmica: resolver para o intervalo (left, right)
-// Retorna a energia máxima e a sequência de remoção
-pair<long long, vector<int>> solve(int left, int right) {
-    // Caso base: nenhum aminoácido no intervalo
-    if (right - left <= 1) {
-        return {0, vector<int>()};
-    }
-    
-    // Verifica se já calculamos este subproblema
-    pair<int, int> key = {left, right};
-    if (memo.find(key) != memo.end()) {
-        return memo[key];
-    }
-    
-    long long maxEnergy = -1;
-    vector<int> bestSequence;
-    
-    // Tenta remover cada aminoácido k no intervalo (left, right) por último
-    for (int k = left + 1; k < right; k++) {
-        // Energia de remover k quando left e right são seus vizinhos
-        long long energyK = energy(left, k, right);
-        
-        // Resolve recursivamente os subintervalos
-        auto leftResult = solve(left, k);
-        auto rightResult = solve(k, right);
-        
-        long long totalEnergy = leftResult.first + rightResult.first + energyK;
-        
-        // Constrói a sequência: primeiro remove left e right, depois k
-        vector<int> sequence;
-        sequence.insert(sequence.end(), leftResult.second.begin(), leftResult.second.end());
-        sequence.insert(sequence.end(), rightResult.second.begin(), rightResult.second.end());
-        sequence.push_back(k);
-        
-        // Atualiza o melhor resultado (lexicograficamente menor em caso de empate)
-        if (totalEnergy > maxEnergy || 
-            (totalEnergy == maxEnergy && sequence < bestSequence)) {
-            maxEnergy = totalEnergy;
-            bestSequence = sequence;
+void getSequence(int left, int right, vector<int>& result) {
+    if (right - left <= 1) return;
+    int k = choice[left][right];
+    getSequence(left, k, result);
+    getSequence(k, right, result);
+    result.push_back(k);
+}
+
+void solve() {
+    // Bottom-up DP
+    for (int len = 2; len <= n + 1; len++) {
+        for (int left = 0; left + len <= n + 1; left++) {
+            int right = left + len;
+            
+            long long maxEnergy = -1;
+            int bestK = -1;
+            
+            // Para cada k possível
+            for (int k = left + 1; k < right; k++) {
+                long long energyK = energy(left, k, right);
+                long long totalEnergy = dp[left][k] + dp[k][right] + energyK;
+                
+                // Se encontrou energia maior, atualiza
+                if (totalEnergy > maxEnergy) {
+                    maxEnergy = totalEnergy;
+                    bestK = k;
+                }
+                // Se energia igual, precisa comparar sequências
+                else if (totalEnergy == maxEnergy && bestK != -1) {
+                    // Precisamos comparar as sequências que k e bestK produzem
+                    // Para isso, construímos as sequências usando os choice já calculados
+                    
+                    // Sequência atual (bestK)
+                    vector<int> seqBest;
+                    if (left + 1 < bestK) {
+                        vector<int> temp;
+                        getSequence(left, bestK, temp);
+                        seqBest.insert(seqBest.end(), temp.begin(), temp.end());
+                    }
+                    if (bestK + 1 < right) {
+                        vector<int> temp;
+                        getSequence(bestK, right, temp);
+                        seqBest.insert(seqBest.end(), temp.begin(), temp.end());
+                    }
+                    seqBest.push_back(bestK);
+                    
+                    // Sequência candidata (k)
+                    vector<int> seqK;
+                    if (left + 1 < k) {
+                        vector<int> temp;
+                        getSequence(left, k, temp);
+                        seqK.insert(seqK.end(), temp.begin(), temp.end());
+                    }
+                    if (k + 1 < right) {
+                        vector<int> temp;
+                        getSequence(k, right, temp);
+                        seqK.insert(seqK.end(), temp.begin(), temp.end());
+                    }
+                    seqK.push_back(k);
+                    
+                    // Se seqK é lexicograficamente menor, atualiza
+                    if (seqK < seqBest) {
+                        bestK = k;
+                        seqBest = seqK;
+                    }
+                }
+            }
+            
+            dp[left][right] = maxEnergy;
+            choice[left][right] = bestK;
         }
     }
-    
-    memo[key] = {maxEnergy, bestSequence};
-    return memo[key];
 }
 
 int main() {
@@ -102,23 +126,28 @@ int main() {
     cin >> n;
     
     potential.resize(n + 2);
-    potential[0] = 1; // Terminal esquerdo
+    potential[0] = 1;
     for (int i = 1; i <= n; i++) {
         cin >> potential[i];
     }
-    potential[n + 1] = 1; // Terminal direito
+    potential[n + 1] = 1;
     
     cin >> classes;
     
-    // Resolve o problema
-    auto result = solve(0, n + 1);
+    memset(dp, 0, sizeof(dp));
+    memset(choice, -1, sizeof(choice));
     
-    cout << result.first << endl;
-    for (int i = 0; i < result.second.size(); i++) {
-        if (i > 0) cout << " ";
-        cout << result.second[i];
+    solve();
+    
+    vector<int> sequence;
+    getSequence(0, n + 1, sequence);
+    
+    cout << dp[0][n + 1] << '\n';
+    for (size_t i = 0; i < sequence.size(); i++) {
+        if (i > 0) cout << ' ';
+        cout << sequence[i];
     }
-    cout << endl;
+    cout << '\n';
     
     return 0;
 }

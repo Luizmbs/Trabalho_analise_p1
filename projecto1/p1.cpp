@@ -3,6 +3,7 @@
 #include <string>
 #include <cstring>
 #include <algorithm>
+#include <chrono>
 
 using namespace std;
 
@@ -52,7 +53,7 @@ void getSequence(int left, int right, vector<int>& result) {
 }
 
 void solve() {
-    // Bottom-up DP
+    //bttom-up dp
     for (int len = 2; len <= n + 1; len++) {
         for (int left = 0; left + len <= n + 1; left++) {
             int right = left + len;
@@ -134,6 +135,7 @@ int main() {
     
     cin >> classes;
     
+    auto start = chrono::high_resolution_clock::now();
     memset(dp, 0, sizeof(dp));
     memset(choice, -1, sizeof(choice));
     
@@ -148,6 +150,10 @@ int main() {
         cout << sequence[i];
     }
     cout << '\n';
+
+    auto end = chrono::high_resolution_clock::now();
+    chrono::duration<double> elapsed = end - start;
+    cout << "Tempo: " << elapsed.count() << "s\n";
     
     return 0;
 }
